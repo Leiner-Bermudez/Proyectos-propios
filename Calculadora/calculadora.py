@@ -11,7 +11,7 @@ elif operacion == "resta" or operacion == "-":
 elif operacion == "multiplicacion" or operacion == "*":
     print("Resultado:", num1 * num2)
 elif operacion == "division" or operacion == "/":
-    if num2 ==0:
+    if num2 == 0:
         print("no se puede dividir")
     else: print("Resultado:", num1 / num2)
 else: print("operacion no valida")
