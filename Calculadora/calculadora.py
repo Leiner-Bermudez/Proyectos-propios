@@ -14,3 +14,4 @@ elif operacion == "division" or operacion == "/":
     if num2 ==0:
         print("no se puede dividir")
     else: print("Resultado:", num1 / num2)
+else: print("operacion no valida")
