@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Estimación — Desarrollo del API</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --card-bg: #ffffff;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --total-bg: #111827;
+    --total-text: #ffffff;
+    --input-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a;
+      --card-bg: #1e2126;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border: #33373f;
+      --accent: #60a5fa;
+      --accent-bg: #1e293b;
+      --total-bg: #2563eb;
+      --total-text: #ffffff;
+      --input-bg: #262a31;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --card-bg: #1e2126;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border: #33373f;
+    --accent: #60a5fa;
+    --accent-bg: #1e293b;
+    --total-bg: #2563eb;
+    --total-text: #ffffff;
+    --input-bg: #262a31;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 0.92rem; margin: 0 0 20px; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .config-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .config-row label { font-size: 0.9rem; color: var(--text-muted); }
+  .config-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+  thead tr { display: table; width: 100%; table-layout: fixed; }
+  tbody { display: block; max-width: 100%; }
+  tr { display: table; width: 100%; table-layout: fixed; }
+  th, td { padding: 10px 6px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); font-weight: 600; }
+  td.task-name { font-size: 0.92rem; }
+  td.task-note { font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 2px; }
+  td.hours-cell { width: 90px; }
+  input.hours-input {
+    width: 64px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  td.risk-cell { width: 70px; text-align: right; color: var(--text-muted); font-size: 0.85rem; }
+
+  .totals {
+    background: var(--total-bg);
+    color: var(--total-text);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .totals .block { min-width: 140px; }
+  .totals .block .label { font-size: 0.75rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.03em; }
+  .totals .block .value { font-size: 1.4rem; font-weight: 700; margin-top: 2px; }
+
+  .note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+  }
+
+  button#resetBtn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  button#resetBtn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Estimación — Desarrollo del API</h1>
+  <p class="subtitle">Fase de desarrollo (FastAPI). Ajusta las horas de cada tarea y el ritmo semanal para ver el total recalculado.</p>
+
+  <div class="card">
+    <div class="config-row">
+      <div>
+        <label for="riskFactor">Margen de contingencia</label>
+        <input type="number" id="riskFactor" value="15" min="0" max="100" step="5"> %
+      </div>
+      <div>
+        <label for="hoursPerWeek">Horas disponibles / semana</label>
+        <input type="number" id="hoursPerWeek" value="10" min="1" max="80" step="1"> h
+      </div>
+      <button id="resetBtn">Restablecer valores</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60%">Tarea</th>
+          <th class="hours-cell">Horas</th>
+        </tr>
+      </thead>
+      <tbody id="taskBody"></tbody>
+    </table>
+  </div>
+
+  <div class="totals">
+    <div class="block">
+      <div class="label">Horas base</div>
+      <div class="value" id="totalBase">0 h</div>
+    </div>
+    <div class="block">
+      <div class="label">Con contingencia</div>
+      <div class="value" id="totalWithRisk">0 h</div>
+    </div>
+    <div class="block">
+      <div class="label">Duración estimada</div>
+      <div class="value" id="totalWeeks">0 semanas</div>
+    </div>
+  </div>
+
+  <p class="note">
+    Estimación orientativa para un trabajo académico de alcance breve (no un sistema en producción a gran escala). Los valores por defecto asumen un API con autenticación, un conjunto moderado de endpoints CRUD y pruebas básicas. <span class="badge">Editable</span>
+  </p>
+</div>
+
+<script>
+const defaultTasks = [
+  { name: "Configuración del entorno y estructura del proyecto", note: "FastAPI, base de datos, dependencias, estructura de carpetas", hours: 4 },
+  { name: "Modelado de datos y esquemas", note: "Modelos ORM, esquemas Pydantic", hours: 5 },
+  { name: "Autenticación y autorización", note: "Login, tokens/JWT, permisos básicos", hours: 8 },
+  { name: "Endpoints CRUD principales", note: "Creación de recursos, lectura, actualización, borrado", hours: 12 },
+  { name: "Validaciones y manejo de errores", note: "Reglas de negocio, respuestas de error consistentes", hours: 5 },
+  { name: "Pruebas unitarias / integración", note: "Casos de prueba clave del API", hours: 6 },
+  { name: "Documentación técnica", note: "Swagger/OpenAPI, README, notas de uso", hours: 3 },
+  { name: "Ajustes finales y despliegue de prueba", note: "Correcciones, entorno de pruebas", hours: 4 },
+];
+
+let tasks = JSON.parse(JSON.stringify(defaultTasks));
+
+function renderTasks() {
+  const body = document.getElementById('taskBody');
+  body.innerHTML = '';
+  tasks.forEach((t, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="task-name">${t.name}<span class="task-note">${t.note}</span></td>
+      <td class="hours-cell"><input type="number" class="hours-input" min="0" step="0.5" value="${t.hours}" data-index="${i}"></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('.hours-input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      const val = parseFloat(e.target.value);
+      tasks[idx].hours = isNaN(val) ? 0 : val;
+      recalc();
+    });
+  });
+}
+
+function recalc() {
+  const riskFactor = parseFloat(document.getElementById('riskFactor').value) || 0;
+  const hoursPerWeek = parseFloat(document.getElementById('hoursPerWeek').value) || 1;
+
+  const totalBase = tasks.reduce((sum, t) => sum + (t.hours || 0), 0);
+  const totalWithRisk = totalBase * (1 + riskFactor / 100);
+  const totalWeeks = totalWithRisk / hoursPerWeek;
+
+  document.getElementById('totalBase').textContent = `${totalBase.toFixed(1)} h`;
+  document.getElementById('totalWithRisk').textContent = `${totalWithRisk.toFixed(1)} h`;
+  document.getElementById('totalWeeks').textContent = `${totalWeeks.toFixed(1)} semanas`;
+}
+
+document.getElementById('riskFactor').addEventListener('input', recalc);
+document.getElementById('hoursPerWeek').addEventListener('input', recalc);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  tasks = JSON.parse(JSON.stringify(defaultTasks));
+  document.getElementById('riskFactor').value = 15;
+  document.getElementById('hoursPerWeek').value = 10;
+  renderTasks();
+  recalc();
+});
+
+renderTasks();
+recalc();
+</script>
+</body>
+</html>
